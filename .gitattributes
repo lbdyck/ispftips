@@ -27,3 +27,4 @@
 *.xlsm binary
 *.obj binary
 *.bin binary
+ISPFTIPS.TOOLS.PDS/#RXFORM git-encoding=BINARY zos-working-tree-encoding=BINARY binary
