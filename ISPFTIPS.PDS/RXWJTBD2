@@ -1,0 +1,55 @@
+/*                                                                    rexx
+  Demo basic table display positioning, and primary- and line command
+  handling.
+  Primary/line command validation is done in the panel.
+*/
+
+ parse value 'RXWJTBD2 PNWJTBD2 TBWJTBD0' with @me pnlname tblname
+ Address IspExec
+ "control errors return"
+ Call Prolog                                          /* Create / open table  */
+
+ /* main table handler */
+ Do forever
+   if datatype(pnltop)<>'NUM' | pnltop<1 then pnltop=1/* set top pos          */
+   "tbtop" tblname                                    /* re-                  */
+   "tbskip" tblname "number("pnltop") NOREAD"         /*   position           */
+   parse value '' with zcmd zerrlm                    /* init some vars       */
+   "tbdispl" tblname "panel("pnlname") rowid(pnlrowid)" /* stack selection 1  */
+   if rc>8 then Call Epilog 'Table display' pnlname 'rc' rc zerrlm
+   if rc=8 | Abbrev('CANCEL',zcmd,3) then Call Epilog /* END / RETURN / CANCEL*/
+   pnltop=ztdtop                                      /* save 1st displayed   */
+   /* save row selections */
+   pnlsel.0=ztdsels                                   /* init list            */
+   Do n=1 to ztdsels
+     if n>1 then "tbdispl" tblname "rowid(pnlrowid)"  /* next selection       */
+     pnlsel.n=zsel';'pnlrowid                         /* save sel and rowid   */
+   End
+   if zcmd<>''   then Call PCmdHandler                /* process primary cmd  */
+   if pnlsel.0>0 then Call LCmdHandler
+ end
+
+ Call Epilog                                          /* cleanup and get out  */
+
+/* process primary commands */
+PCmdHandler:
+ say 'pcmd:' zcmd
+ return 0
+
+/* process row selections   */
+LCmdHandler:
+ Do pnlseln=1 to pnlsel.0
+   parse var pnlsel.pnlseln lc';'rowid
+   "tbskip" tblname "row("rowid")"                    /* retrieve row         */
+   say 'Process row' rowid 'zsel' lc', seq='seq' ,dsn='dsn
+ End
+ return 0
+
+Prolog:
+ if RXWJTBD0(tblname)=0 then return 0                /* run external cmd      */
+ Call epilog 'mktbl error'                           /* external cmd error    */
+
+Epilog:
+ address ispexec "tbend" tblname
+ if arg(1)<>'' then say arg(1)
+ exit 0

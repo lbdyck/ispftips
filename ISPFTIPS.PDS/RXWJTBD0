@@ -1,0 +1,57 @@
+/*                                                                     rexx
+  Make test table from datasetname list
+*/
+
+ arg table dslist .
+ table=word(table 'TBWJTBD0',1)
+ dslist=word(dslist userid(),1)
+
+ address ispexec
+ "control errors return"
+ "tbend"    table
+ zerrlm=''
+ lcmd=''
+ "tbcreate" table "names(lcmd dsn type vol cat seq text) nowrite share"
+ if rc<>0 then return rc zerrlm
+
+ /* use previoulsly created test data list */
+ listds="'"userid()".ISPF.TIPS."table".LIST'"
+ if sysdsn(listds)='OK' then do
+   cc=BpxWdyn('alloc da('listds') shr rtddn(ldd)')
+   address tso "execio * diskr" ldd "(stem dsl. finis)"
+   cc=rc
+   zz=BpxWdyn('free dd('ldd')')
+   do n=1 to dsl.0
+     parse var dsl.n seq dsn type vol cat
+     call TbAdd
+   end
+   return 0
+ end
+
+ /* benerate list from catalog data */
+ zz=outtrap('lc.')
+ address tso "listc lvl('"dslist"') vol"
+ zz=outtrap('off')
+ dsn=''
+ seq=0
+ Do n=1 to lc.0
+   Select
+     when left(lc.n,1)<>' ' then do  /* new */
+       if dsn<>'' then Call TbAdd
+       parse value seq+1 lc.n with seq type '-' . dsn cat vol
+     end
+     when word(lc.n,1)='IN-CAT' then cat=word(lc.n,3)
+     when left(word(lc.n,1),7)='VOLSER-' then vol=right(word(lc.n,1),6)
+     otherwise nop
+   End
+ End
+ if dsn<>'' then Call TbAdd
+ return 0
+
+TbAdd:
+ /*say 'dsn:' dsn 'type:' type 'cat:' cat 'vol:' vol*/
+ type=space(type,0)
+ seq =right(seq,4,0)
+ text=left(dsn,35) left(type,8) left(vol,6) cat
+ "tbadd" table
+ return 0

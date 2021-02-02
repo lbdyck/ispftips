@@ -1,0 +1,113 @@
+/*                                                                    rexx
+  Demo basic table filter using existing variable name
+*/
+
+ parse value 'RXWJTBD3 PNWJTBD3 TBWJTBD0 -1 ALL' with ,
+   @me pnlname tblname pnltop prows
+ Address IspExec
+ "control errors return"
+ Call Prolog                                          /* Create / open table  */
+
+ /* main table handler */
+ Do main$=1 to 999999                                 /* almost forever       */
+   pnltop=max(pnltop,0)
+   "tbtop" tblname                                    /* re-                  */
+   "tbskip" tblname "number("pnltop") NOREAD"         /*   position           */
+   parse value '' with zcmd zerrlm                    /* init some vars       */
+   "tbdispl"  tblname "panel("pnlname") rowid(pnlrowid)" /* stack selection 1 */
+   if rc>8 then Call Epilog 'Table display' pnlname 'rc' rc zerrlm
+   if rc=8 | Abbrev('CANCEL',zmnd,3) then Call Epilog /* END / RETURN / CANCEL*/
+   pnltop=ztdtop                                      /* save 1st displayed   */
+
+   /* save row selections */
+   pnlsel.0=0                                         /* init list            */
+   Do pnlseln=1 to ztdsels
+     if pnlseln>1 then "tbdispl" tblname "rowid(pnlrowid)" /* next selction   */
+     if zsel<>'' then Parse value,
+       1+pnlsel.0 1+pnlsel.0 zsel pnlrowid,           /* increase stem idx    */
+       with n pnlsel.0 pnlsel.n                       /*  and add to stem     */
+   End
+   if zcmd<>''   then Call PCmdHandler
+   if pnlseln>0  then Call LCmdHandler
+ end
+
+ Call Epilog                                          /* cleanup and get out  */
+
+/* handle primary commands
+    include - include in addition to already included
+    exclude - exclude in addition to already excluded
+    only    - show all with text, hide all without
+    hide    - hide all with text, show all without
+*/
+PCmdHandler:
+ parse var zcmd cvrb cdata
+ if cdata<>'' &,
+  ( Abbrev('INCLUDE',cvrb,1) | Abbrev('EXCLUDE',cvrb,1),
+  | Abbrev('ONLY'   ,cvrb,1) | Abbrev('HIDE'   ,cvrb,1) ) then call Filter
+ if Abbrev('RESET'  ,cvrb,3) | Abbrev('ALL'    ,cvrb,1)   then call Reset
+ return 0
+
+/* Include/exclude rows with text - use var 'dsn' */
+Filter:
+ cnd=left(cvrb,1)
+ filtn=0
+ "tbtop"  tblname
+ "tbquery" tblname "rownum(rown)"                      /* get number of rows  */
+ do rown
+   "tbskip" tblname                                    /* get next row        */
+   odsn=dsn                                            /* save dsname for test*/
+   if pos(cnd,'HO')>0 then dsn=strip(dsn,'l','-')      /* reset               */
+   if cnd='I' then,
+     if pos(cdata,dsn type vol cat)>0 then dsn=strip(dsn,'l','-')
+   if cnd='O' then,
+     if pos(cdata,dsn type vol cat)=0 then dsn='-'strip(dsn,'l','-')
+   if pos(cnd,'EH')>0 then,
+     if pos(cdata,dsn type vol cat)>0 then dsn='-'strip(dsn,'l','-')
+   if dsn<>odsn then do                                /* indicator changed?  */
+     "tbput" tblname                                   /* update row          */
+     filtn=filtn+1                                     /* for message         */
+   end
+ End
+ if filtn=0 then return 0                              /* anything changed ?  */
+ parse value '' with seq type vol cat text lcmd zsel   /* init vars           */
+ dsn='-*'                                              /* set search          */
+ "tbsarg" tblname "namecond(DSN NE)"                   /* set indicator       */
+ parse value 0 'SCAN' with pnltop prows
+ Return setmsg(filtn 'records changed')
+
+/* Reset - show all rows */
+Reset:
+ "tbtop" tblname
+ do forever
+   parse value '-*' with dsn seq type vol cat text lcmd zsel
+   "tbscan" tblname "arglist(dsn) condlist(EQ)"
+   if rc<>0 then leave
+   if left(dsn,1)<>'-' then iterate
+   dsn=strip(dsn,'l','-')                              /* drop indicator      */
+   "tbput"  tblname
+ end
+ parse value 0 'ALL' with pnltop prows                 /* show all rows       */
+ Return 0
+
+Setmsg:
+ parse arg zedlmsg
+ address ispexec "setmsg msg(isrz000)"
+ return 0
+
+/* process row selections, if any */
+LCmdHandler:
+ Do pnlseln=1 to pnlsel.0
+   parse var pnlsel.pnlseln lc rowid
+   "tbskip" tblname "row("rowid")"                    /* retrieve row         */
+   say 'Process row=' rowid', lcmd' lc', seq='seq' ,dsn='dsn
+ End
+ return 0
+
+Prolog:
+ if RXWJTBD0(tblname)=0 then return 0                /* run external cmd      */
+ Call epilog 'mktbl error'                           /* external cmd error    */
+
+Epilog:
+ address ispexec "tbend" tblname
+ if arg(1)<>'' then say arg(1)
+ exit 0

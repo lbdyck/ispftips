@@ -119,3 +119,11 @@ SKCMD    Skel    Sample Skeleton for RXSKLCMD
 SKREXX   Skel    Sample Skeleton with REXX
 SKREXXE  Skel    Skeleton to demonstrate Skeleton REXX with Execio
 SKREXXV  Skel    Skeleton to demonstrate Skeleton REXX with variable
+RXWJTBD2 REXX  Basic table display positioning, primary/line commands (WJ)
+PNWJTBD2 Panel Panel for the RXWJTBD2 demo (WJ)
+RXWJTBD3 REXX  Demo basic table filter using existing variable name (WJ)
+PNWJTBD3 Panel Panel for the RXWJTBD3 demo (WJ)
+RXWJTBD4 REXX  Demo drive RXISPTBL (WJ)
+PNWJTBL4 Panel List panel for RXWJTBD4 (WJ)
+PNWJTBD4 Panel Details panel for RXWJTBD4 (WJ)
+RXWJTBD0 REXX  Create test table for RXWJTBD2 and RXWJTBD3 programs (WJ)

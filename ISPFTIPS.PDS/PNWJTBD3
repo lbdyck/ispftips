@@ -1,0 +1,20 @@
+)ATTR
+ _ type(input)  caps(on) just(left) color(turq) hilite(uscore)
+ + type(text)   color(green) skip(on)
+ " type(text)   color(blue ) skip(on)
+ ! type(output) color(blue ) skip(on)
+)BODY expand(\\)
+%\ \Table Display Sample (&tblname)\ \+ +
+%Cmd =>_zcmd \ \+Scrl_scrl+
++
+%Sl Seq  Dsname                            Type     Volser Catalog
+)MODEL clear(zsel) rows(&prows)
+_z !seq !dsn                              !type    !vol   !cat
+)INIT
+ .zvars = '(zsel)'
+)PROC
+ Ver (&zsel,list,B,E,V,S)
+ &key     = .pfkey
+ &csrpos  = .csrpos
+ &cursor  = .cursor
+)END
