@@ -1,0 +1,18 @@
+/* --------------- REXX ------------------- *
+ | Convert a number to a number with commas |
+ | ISPF - Developers - Tips and Tricks      |
+ * ---------------------------------------- */
+ arg number
+
+ if datatype(number) /= 'NUM' then
+    number = random(99999)
+
+/* ----------------------------------------------------- */
+/* number format code thanks to Doug Nadel               */
+/* ----------------------------------------------------- */
+ str=strip(translate('0,123,456,789,abc,def', ,
+                 right(number,16,','), ,
+                 '0123456789abcdef'),'L',',')
+ number = strip(str)
+
+ say 'number:' number

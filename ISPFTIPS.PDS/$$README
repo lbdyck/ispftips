@@ -68,10 +68,15 @@ PNPROG2  Panel   ISPF Panel used by RXPROG2
 PNSCRL   Panel   ISPF Panel to demonstrate a scrollable field
 PNTAB    Panel   ISPF Panel used by the RXTAB Exec and RXTABLE Exec
 PNVDSN   Panel   ISPF Panel to demonstrate Panel REXX to validate a Data Set
+PNWJTBD2 Panel Panel for the RXWJTBD2 demo (WJ)
+PNWJTBD3 Panel Panel for the RXWJTBD3 demo (WJ)
+PNWJTBD4 Panel Details panel for RXWJTBD4 (WJ)
+PNWJTBL4 Panel List panel for RXWJTBD4 (WJ)
 RXABC    Rexx    Rexx code to drive the Action Bar Panel
 RXAREA   Rexx    Rexx Exec to drive RXAREAP
 RXCENTER Macro   Rexx Edit Macro to Center text and use a Range
 RXCMDS   Rexx    Exec to demonstrate File Tailoring
+RXCOMMA  Rexx    Code to convert a number to a number with commas
 RXDYN    Rexx    Rexx to demonstrate a dynamic ISPF Panel (PNDYN)
 RXDYNTBL Rexx    Rexx to demonstrate adding rows to a table when needed
 RXEDITHL Rexx    Rexx to demonstrate dyamic panel colors (PNEDITHL)
@@ -115,15 +120,11 @@ RXTABLE  Rexx    Exec to demonstrate Table processing (improved)
 RXTM     Rexx    Exec to demonstrate calling RXTSOMAC
 RXTSOMAC Rexx    Exec to demonstrate detecting call as TSO or Edit Macro
 RXVDSN   Rexx    Exec to drive RXVDSNP Panel
+RXWJTBD0 REXX  Create test table for RXWJTBD2 and RXWJTBD3 programs (WJ)
+RXWJTBD2 REXX  Basic table display positioning, primary/line commands (WJ)
+RXWJTBD3 REXX  Demo basic table filter using existing variable name (WJ)
+RXWJTBD4 REXX  Demo drive RXISPTBL (WJ)
 SKCMD    Skel    Sample Skeleton for RXSKLCMD
 SKREXX   Skel    Sample Skeleton with REXX
 SKREXXE  Skel    Skeleton to demonstrate Skeleton REXX with Execio
 SKREXXV  Skel    Skeleton to demonstrate Skeleton REXX with variable
-RXWJTBD2 REXX  Basic table display positioning, primary/line commands (WJ)
-PNWJTBD2 Panel Panel for the RXWJTBD2 demo (WJ)
-RXWJTBD3 REXX  Demo basic table filter using existing variable name (WJ)
-PNWJTBD3 Panel Panel for the RXWJTBD3 demo (WJ)
-RXWJTBD4 REXX  Demo drive RXISPTBL (WJ)
-PNWJTBL4 Panel List panel for RXWJTBD4 (WJ)
-PNWJTBD4 Panel Details panel for RXWJTBD4 (WJ)
-RXWJTBD0 REXX  Create test table for RXWJTBD2 and RXWJTBD3 programs (WJ)
