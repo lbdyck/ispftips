@@ -124,7 +124,7 @@ RXWJTBD0 REXX  Create test table for RXWJTBD2 and RXWJTBD3 programs (WJ)
 RXWJTBD2 REXX  Basic table display positioning, primary/line commands (WJ)
 RXWJTBD3 REXX  Demo basic table filter using existing variable name (WJ)
 RXWJTBD4 REXX  Demo drive RXISPTBL (WJ)
-SKCMD    Skel    Sample Skeleton for RXSKLCMD
+SKCMDS   Skel    Sample Skeleton for RXSKLCMD
 SKREXX   Skel    Sample Skeleton with REXX
 SKREXXE  Skel    Skeleton to demonstrate Skeleton REXX with Execio
 SKREXXV  Skel    Skeleton to demonstrate Skeleton REXX with variable
