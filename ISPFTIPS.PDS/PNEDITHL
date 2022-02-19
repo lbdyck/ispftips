@@ -6,7 +6,7 @@
    /*                                                               */
    /* Do a find for *REXX in column 1 for the custom code           */
    /*                                                               */
-)ATTR DEFAULT(àâ) FORMAT(MIX)            /* ISREDDE2 - ENGLISH - 7.3 */
+)ATTR DEFAULT(¬à¬â) FORMAT(MIX)            /* ISREDDE2 - ENGLISH - 7.3 */
  15 TYPE(AB)
  2A TYPE(ABSL) GE(ON)
  2B TYPE(PT)
@@ -52,11 +52,11 @@
  D  TYPE(CHAR) COLOR(&ZCD) HILITE(&ZHD)
  F  TYPE(CHAR) COLOR(&ZCF) HILITE(&ZHF)
  S  TYPE(CHAR) COLOR(&ZCS) HILITE(&ZHS)
- ‹  TYPE(NEF) CAPS(ON) PADC(USER)
+ √ú  TYPE(NEF) CAPS(ON) PADC(USER)
 )BODY  EXPAND(//) WIDTH(&ZWIDTH)  CMD(ZCMD)
-ä--/-/-------------------------------------------------------------------------
-Z         Z/ /                                           ColumnsZ    Z    ù
-Command ===>èZ/ /                                            Scroll ===>‹Z   ù
+¬ä--/-/-------------------------------------------------------------------------
+Z         Z/ /                                           ColumnsZ    Z    ¬ù
+Command ===>¬èZ/ /                                            Scroll ===>√úZ   ¬ù
 ZDATA,ZSHADOW/ /                                                              
 / /                                                                           
 )INIT

@@ -7,7 +7,9 @@ An ISPF dialog has been provided to simplify access to these examples.
 To experiment with the samples:  Execute the $DEVISPF exec
 
 There are 2 TSO Transmit (XMIT) format files must be received and
-installed to be used. These reside in a separate PDS.
+installed to be used. These are members #RXFORM and #TRYIT. Issue a
+TSO RECEIVE on these members to recreate them and then copy them
+back into this PDS.
 
 To experiment with these copy the REXX members into a library included in
 your SYSEXEC (or SYSPROC) concatenation, and copy the Panel members into
@@ -68,10 +70,10 @@ PNPROG2  Panel   ISPF Panel used by RXPROG2
 PNSCRL   Panel   ISPF Panel to demonstrate a scrollable field
 PNTAB    Panel   ISPF Panel used by the RXTAB Exec and RXTABLE Exec
 PNVDSN   Panel   ISPF Panel to demonstrate Panel REXX to validate a Data Set
-PNWJTBD2 Panel Panel for the RXWJTBD2 demo (WJ)
-PNWJTBD3 Panel Panel for the RXWJTBD3 demo (WJ)
-PNWJTBD4 Panel Details panel for RXWJTBD4 (WJ)
-PNWJTBL4 Panel List panel for RXWJTBD4 (WJ)
+PNWJTBD2 Panel   Panel for the RXWJTBD2 demo (WJ)
+PNWJTBD3 Panel   Panel for the RXWJTBD3 demo (WJ)
+PNWJTBD4 Panel   Details panel for RXWJTBD4 (WJ)
+PNWJTBL4 Panel   List panel for RXWJTBD4 (WJ)
 RXABC    Rexx    Rexx code to drive the Action Bar Panel
 RXAREA   Rexx    Rexx Exec to drive RXAREAP
 RXCENTER Macro   Rexx Edit Macro to Center text and use a Range

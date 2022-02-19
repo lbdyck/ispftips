@@ -1,0 +1,842 @@
+ /*                                                                   REXX
+
+XISPTBL: General subroutine for ISPF Table Handling
+
+Callable subroutine  for standard ISPF table  handling. The subroutine
+has  built-in support  for  filtering, sorting  and  edit -  table-row
+delete, edit, insert and repeat.
+ You can also specify primary-  and linecommands for which an external
+program is to be called.
+
+It is recommended  that the table contains variable  ZSEL, otherwise a
+temporary table  Wnnnnnnn is  created as  a copy.  Any changes  to the
+temporary table are copied back to the original.
+
+
+Syntax
+
+ rv = XISPTBL(parameters)
+
+Parameters
+
+ ASEL(value)      Auto-select char. Set zsel to 'value' for
+                  point-and-shoot selected lines. Default is 'S'.
+ CRC(value)       Return code to set if changes were made. Default = 0.
+ CPROC(name)      Name of program to call for primary commands not
+                  handled internally.
+                  See 'External programs' below for details.
+ DPANEL(name)     Optional details panel, displayed for line commands
+                  D, E, I, L and R.
+ DPROC(name)      Name of program to call for primary commands from the
+                  details edit panel.
+                  See 'External programs' below for details.
+ HDR(text)        List panel header (title). Imbedded paranthesis are
+                  allowed, but must be paired, i.e HDR(just testing(1)).
+ ICMD(text)       A command to run before first display, i. e. SORT or
+                  a filter command.
+ ISEL(list)       List of line commands to be handled internally. They
+                  must be seperated by at least one blank.
+                  If the DPANEL option is used then the named panel will
+                  be shown, which allows the command to be verified and
+                  aborted.
+                  See Built-in line commands below for details.
+ PANEL(name)      Table display panel for showing the list.
+ PASSTEXT(text)   Pass 'text' to external procedure(s).
+ POPUP            The table display will be shown as a popup panel.
+ PROC(name)       Combined CPROC, DPROC and SPROC when the same external
+                  program can be used.
+                  See 'External programs' below for details.
+ RETCMD(list)     List of commands causing XISPTBL to terminate, returning
+                  the command. This can be used to redrive the list.
+                  Values in the list may be abbreviated, see
+                  'Abbreviations' below.
+ SEARCHVAR(list)  List of variables used for the filter commands. Default
+                  is all the variables.
+ SEL(list)        List of line commands to be handled externally. The
+                  PROC or SPROC parameter names the program.
+ SELVAR(list)     List of variables containing action to take for a given
+                  selection, see 'The SELVAR feature' section below for
+                  details.
+ SORT(list)       List of variable name(s) to use for the SORT command.
+                  If this parameter is not specfied then SORT is not
+                  allowed. The parameter can be an equal sign,
+                  meaning all variables in the table.
+ SPROC(list)      Name of program to call for line commands defined
+                  by the SEL parameter.
+                  See 'External programs' below for details.
+ TABLE(name)      Name of table containg data.
+
+
+The SELVAR feature
+
+ This feature allows selection commands to be passed in the table,
+ instead of having to call an external program.
+ The value is a series of doublets: the selection character followed
+ by the name of the variable containing the command. The command may
+ start with some special values:
+  ISPX text  - Do an ADDRESS ISPEXEC text
+  TSOX text  - Do an ADDRESS TSO text
+ Otherwise the text is INTERPRETed.
+ Sample:
+   "tbcreate" table "names(zsel dsname cmde cmdb cmdv)"
+   cmde="ISPX edit dataset('"dsname"')"
+   cmdb="ISPX browse dataset('"dsname"')"
+   cmdv="ISPX view dataset('"dsname"')"
+   "tbadd" table
+   cc=XISPTBL('table('table') panel('panel')',
+           'sel(e b v) selvar(e cmde b cmdb v cmdv)')
+
+
+Abbreviations (RETCMD only)
+
+ A list of names may contain an abbreviation length in parenthesis,
+ like this:  NAME(1) allows 'N' as an abbreviation of 'NAME'.
+
+
+Built-in primary commands
+
+ Note that the built-in primary commmands cannot be disabled, only
+ ammended. Also ISPF commands, built-in and user added, takes
+ precedence to XISPTBL primary commands, unless prefixed by >.
+
+ ALL               Show all lines.
+ CANcel            Return with rc 8. If a temporary table is used,
+                   then it is just dropped.
+ END               Return with rc 0. If a temporary table is used,
+                   then changes are applied to the base table.
+ eXclude text      Exclude all lines containing 'text'. Note that
+                   the data might not actually be on the display
+                   if the variable containing the data is not in
+                   the screen row model.
+ Find text dir     Find next occurence of 'text'. See FIND notes later.
+ Find * dir        Find next occurence of 'text'. See FIND notes later.
+ Find              Find next occurence of 'text'. See FIND notes later.
+ Locate text       Find first line starting with 'text'.
+ NEW               Insert line. The DPANEL parameter is required.
+ Only text         Show only rows with 'text'. Note that the data
+                   might not actually be displayed if the variable
+                   is not in the screen row model.
+ RESet             Show all lines.
+ SORT              Sort lines based on the SORT parmeter.
+
+FIND notes
+ The FIND command finds text starting from the top line displayed to the
+ end or the top of the data, depending on the search direction.
+ The direction can be NEXT (default) or PREV.
+ FIND without txt or FIND * will use the latest direction.
+ The text may be quoted using either single (') or double (") quotes.
+
+
+Built-in line commands
+
+ These are activated by the ISEL parameter.
+ Note that the SEL parameters takes precedence over ISEL.
+
+ D                 Delete row. If DPANEL parameter is used then the
+                   named panel is shown for confirmation.
+ E                 Edit. The DPANEL parameter is required.
+ I                 Insert. This also activates the NEW primary command.
+                   The DPANEL parameter is required.
+ L                 List row details, requires the DPANEL parameter.
+ R                 Repeat row. If DPANEL parameter is used then the
+                   named panel is shown for confirmation.
+                   Repeating a row in a keyed table will cause an error
+                   if the key value(s) is not changed.
+ S                 Show - alias of L
+ X                 eXclude line from display. Note, this cannot be
+                   changed by the SEL/ISEL operands as eXclude line
+                   is part of the filter feature.
+ ALL               All of the above
+
+
+Point-and-shoot feature
+
+ Enter key is pressed with the cursor on a displayed table row with
+ empty 'zsel' field. Will use the ASEL value as selection.
+
+
+External programs
+
+ External  programs are  called when  the 'PROC',  'CPROC', 'DPROC'  or
+ 'SPROC' parameter is specified, and  the primary- or linecommand is to
+ be handled externally (see the SEL operand).
+
+ The program(s) are called with these parameters:
+
+   XISPTBL   Identifies the call as comming from XISPTBL.
+   id        the id option from the XISPTBL call
+   CMD       this is a call for a primary command
+   SEL       this is a call for a line (select) command
+   table     either the table from the XISPTBL call, or a temporary
+             table 'Wnnnnnnn' if the table did not include the ZSEL
+             variable.
+   cmd       the line- or primary command
+   passtext  the value from the 'PASSTEXT' option of the XISPTBL call.
+
+   i.e.
+    linecmd: XISPTBL,8496350,SEL,P8496350,S,PRIM
+    primcmd: XISPTBL,1194206,CMD,P1194206,A B,PRIM
+
+
+Return codes
+   00       ok, data may have be changed if CRC parameter is not used.
+   08   User cancelled process
+  >08   Something very bad happened
+   crcval   data changed (value set by the CRC parameter)
+
+  Labels and variables are mostly prefixed by 'ath' - A Table Handler.
+
+
+Sample
+
+ Call external routine (actually self) to handle primary- and line
+ commands.
+
+
+  /* determine if called as command handler */
+  arg p1,pid,pcmd,ptable,ptext
+  if p1 pcmd='XISPTBL CMD' then Exit PCmdX()
+  if p1 pcmd='XISPTBL SEL' then Exit LCmdX()
+
+  /* Run table driver */
+  parse source . . $me .
+  cc=XISPTBL('table('$table') panel('$panel') width(80)',
+            'proc('$me') id('$pid') sel(s e v) hdr(Table driver demo)',
+            'sort(=) icmd(sort) isel(all) dpanel(xisptbld)')
+
+
+  /*- Line command handlers -*/
+ LCmdX:
+  "tbget" ptable
+  err=''
+  dsn=strip(data)
+  Select
+    when zsel='E' then "Edit dataset('"dsn"')"
+    when zsel='V' then "View dataset('"dsn"')"
+    when zsel='S' then do
+      cc=listdsi("'"dsn"'")
+      call ispmsg dsn sysvolume sysdsorg syslrecl sysblksize
+    end
+    otherwise err='Y'
+  End
+  if err='Y' then zsel='?'zsel
+  else zsel=''
+  "tbput" ptable
+  exit 0
+
+  /*- Primary command handlers -*/
+ PCmdX:
+  call ispmsg 'Pcmd' ptext 'not implemeted yet'
+  exit 0
+
+
+History
+  2017-12-11  Opt RETCMD added
+  2017-12-14  point-and-shoot selection added
+  2017-12-21  make work table if original does not have ZSEL var
+  2017-12-23  fix update detection problem
+  2018-01-08  fix problems with details display and with internal copy.
+  2018-01-15  fix problem with change detection
+  2018-01-16  change remaining EXITs to RETURNs
+              change all labels so that XISPTBL can be included in other
+  2018-05-18  add display refresh after TSOX
+  2018-07-17  add ERROR and SYNTAX OFF in a couple of places
+  2018-09-26  add parm WIDTH. add test for valid ISEL values, center header
+  2018-10-18  add parm PASSTEXT - pass text to called pgm.
+  2019-01-22  fix RETCMD problem
+  2019-04-15  fix RETCMD problem - will test 1st word, not entire string
+              fix problem EXCLUDE primary command not recoqnized.
+  2019-04-22  add SORT-by-name. names are table names. sort is ascending.
+  2019-11-07  allow sel(*) to call proc with all line cmds.
+  2019-11-16  add 'locate' command. add '*' and NEXT/PREV to find command.
+  2019-11-21  add 'MSGPFX' parameter.
+
+
+  Written by Willy Jensen
+    email willy@harders-jensen.com
+    web   http://harders-jensen.com/wjtech/
+
+ */
+
+ parse value '' with athdosort athwtbl athotbl
+ vkl='ID TABLE PANEL DPANEL WIDTH PROC SEL ISEL SPROC ICMD CPROC DPROC',
+     'SORT HDR SELVAR SEARCHVAR POPUP CRC RETCMD ASEL', /* valid keywords */
+     'PASSTEXT MSGPFX'
+ do n=1 to words(vkl)
+   zz=Value('ATH'word(vkl,n),'')
+ end
+ cc=AthParser(arg(1),vkl,'ATH')
+ athmsgpfx = word(athmsgpfx 'XISPTBL',1)
+ if athmsgpfx = '-' then athmsgpfx=''
+ if word(cc,1)<>0 then return xmsg(cc)
+ upper athsel athisel athselvar
+ if athisel='ALL' then athisel='D E I L R S'
+ do n=1 to words(athisel)    /* check values */
+   if wordpos(word(athisel,n),'D E I L R S')=0 ,
+         then return AthTblErr('Invalid ISEL value' word(athisel,n),90)
+ end
+ if athtable  ='' then return AthTblErr('Missing table name',90)
+ if athpanel  ='' then return AthTblErr('Missing panel name',90)
+ if athproc<>'' then,
+   parse value athproc athproc athproc with athcproc athsproc athdproc
+ athuid=right(left(space(translate(time('l'),' ','.:'),0),10),7)
+ athasel=translate(word(athasel 'S',1))   /* auto selection char */
+
+ /*--------------------------------------------------------------------
+                     Table handler main routine
+ --------------------------------------------------------------------*/
+ Address ispexec
+ parse value copies('0 ',20) with athrc athtdtop athcrp .
+ parse value '' with athsell athfind athfindn athonly
+ "vget zscrmaxw"
+ Select
+   when datatype(athwidth)='NUM' then nop
+   when athwidth='MAX' then athwidth=zscrmaxw
+   otherwise athwidth=80
+ End
+ if athhdr<>'' then athhdr=center(athhdr,athwidth-2)
+ athme = 'XISPTBL'
+ "vput (athsel athisel)"
+
+ /* get table info */
+ athotbl=athtable
+ "tbquery" athtable "names(athonl) keys(athokl) rownum(rows)"
+ if rc<>0 then return AthIspMsg('TBQUERY' zerrlm,8)
+ parse value UnPar(athonl','athokl) with athonl','athokl
+ athvarl =space(athokl athonl)
+ athovarl=athvarl   /* keep original list */
+ athvarlnz=athvarl
+ n=wordpos('ZSEL',athvarlnz)
+ if n>0 then athvarlnz=delword(athvarlnz,n,1)
+
+ /* make change base */
+ "tbtop" athotbl                                /* re-position      */
+ interpret,
+   'do n=1 to' rows';"tbskip"' athotbl';dbase.n='athvarlnz';end'
+ dbase.0=rows
+
+ /* make copy table if original does not contain ZSEL var */
+ if wordpos('ZSEL',athvarl)=0 then do  /* make copy */
+   athtable='W'athuid
+   If AthIspCmd("tbcreate" athtable "keys("athokl") names(zsel "athonl")",0),
+     then return 12
+   Call AthTblCopy athotbl athtable
+   "tbquery" athtable "names(n) keys(k) rownum(r)"
+ end
+
+ /* setup sort opts */
+ if athsearchvar='' then athsearchvar = athvarlnz
+ if athsort='=' then athsort=athvarlnz
+ if athsort<>'' then do
+   s=''
+   do n=1 to words(athsort)
+     if word(athsort,n)<>'ZSEL' then s=s','word(athsort,n)',C,A'
+   end
+   athsort=substr(s,2)
+ end
+
+ if athicmd<>'' then do    /* initial command */
+   cc=AthTblCmd(athicmd)
+   if cc>=8 then return cc
+ end
+
+ /* main handler */
+ Do athmain$=1 to 999999                          /* forever          */
+   if athdosort='Y' & athsort<>'' then Call AthTblSort
+   athdosort='N'                                  /* sort before show?*/
+   "tbtop" athtable                               /* re-position      */
+   if athtdtop<>0 then "tbskip" athtable "number("athtdtop") NOREAD"
+   zerrlm=''
+   "tbvclear" athtable
+   zsel='X'
+   "tbsarg"   athtable "namecond(zsel ne)"
+   athcsrrw=''
+   if athpopup='Y' then "addpop"
+   "tbquery"  athtable "rownum(athrown)"
+   "tbdispl"  athtable "panel("athpanel")",        /* stack selection 1*/
+            "rowid(athrowid) position(athcrp)"    /* return csr and id*/
+   drc=rc
+   if athpopup='Y' then "rempop"
+   /* athrowid   - will contain a number that uniquely identifies the
+                   row being accessed
+      athcrp     - will contain the row number pointed to by the crp
+   */
+   if drc>8 then,
+     return AthTblErr('Table display' athpanel 'rc' drc)+AthEpilog(drc)
+   if drc=8 then return AthEpilog()                /* END / RETURN     */
+
+   athtdtop=ztdtop                                /* save 1st displayd*/
+
+   /* handle primary commands */
+   if zcmd<>'' then do
+     if AthAbrList(word(zcmd,1),athretcmd) then,
+       return abbrlistv subword(zcmd,2)
+     cc=AthTblCmd(zcmd)
+     if cc>=8 then Return AthEpilog(cc)
+     iterate athmain$
+   end
+
+   /* save row selections */
+   zselsave=''
+   If athcsrrw<>'' & ztdsels=0 & athcsrrw<>0 then do  /* sel by cursor */
+     "tbtop"  athtable
+     "tbskip" athtable "number("athcsrrw") rowid(athsell)"
+     parse value athasel athasel with zsel zselsave
+     "tbput" athtable   /* rewrite data */
+   End
+   Else do athseln=1 to ztdsels
+     if athseln>1 then "tbdispl" athtable "rowid(athrowid) position(athcrp)"
+     if zsel='=' then zsel=zselsave
+     else if zsel<>'' then zselsave=zsel
+     "tbput" athtable   /* rewrite data */
+     if zsel<>'' & wordpos(athrowid+0,athsell)=0 then,
+       athsell=athsell athrowid+0
+   End
+
+   /* process row selections */
+   Do while athsell<>''
+     athrowid=word(athsell,1)
+     "tbskip" athtable "row("athrowid")"
+     parse value '' with athpnlhi
+     athzsel=zsel
+     Select
+       when zsel='' then nop
+       when left(zsel,1)='?' then iterate athmain$
+       when zsel='X' then NOP
+       when wordpos(zsel,athselvar)>0 then do
+         if value(word(athselvar,wordpos(zsel,athselvar)+1))<>'' then,
+            zz=AthRunCmd(value(word(athselvar,wordpos(zsel,athselvar)+1))),
+              +AthTblSetSel('')
+       end
+       when (wordpos(zsel,athsel)>0 | athsel='*') & athsproc<>'' then do
+         Interpret,
+           "cc="athsproc"('"athme"','"athid"','SEL','"athtable"','"zsel"'",
+             || ",'"athpasstext"')"
+         if cc=0 & queued()>0 then return AthEpilog(0)
+         if cc>4 then return AthEpilog(cc)
+       end
+       when wordpos(zsel,athisel)>0 then Interpret "cc=AthTblEdit"zsel"()"
+       otherwise do
+         call AthIspMsg zsel 'is not a valid line command'
+         call AthTblSetSel('?'zsel)
+         iterate athmain$
+       end
+     End
+     athsell=subword(athsell,2)
+   End
+ end
+ Return AthEpilog(athrc)
+
+/* processing done at final return */
+AthEpilog: /* parm: rc */
+ trace off
+ $ischg=AthChkChg()
+ if athotbl<>athtable then do   /* rewrite original tale if needed */
+   if $ischg then do  /* change detected */
+     "tbquery" athotbl "rownum($rows)"
+     "tbbottom" athotbl
+     do $rows /* clear table */
+       "tbdelete" athotbl
+     end
+     Call AthTblCopy athtable athotbl
+   end
+   "tbend" athtable
+ end
+ if arg(1)>=8 then return arg(1)
+ if $ischg & athcrc<>'' then return athcrc  /* change detected */
+ return word(arg(1) 0,1)
+
+ /* set changed rc  */
+AthChkChg:
+ "tbquery" athtable "rownum(ccrows)"
+ if ccrows<>dbase.0 then return 1
+ "tbtop" athotbl
+ Interpret,
+ 'do n=1 to' ccrows';',
+   '"tbskip"' athtable';',
+   'if dbase.n<>'athvarlnz 'then return 1;',
+ 'end'
+ return 0
+
+/* handle primary commands */
+AthTblCmd:
+ arg athpcmd
+ parse var athpcmd athpcverb athpcdata
+ Select
+   when Abbrev('CANCEL',athpcmd,3)   then return 8
+   when Abbrev('RESET', athpcmd,3)   then call AthTblReset
+   when Abbrev('FIND',  athpcverb,1) then call AthTblFind athpcdata
+   when athpcverb='RFIND' then call AthTblFind
+   when Abbrev('LOCATE',athpcverb,1) then call AthTblLoc athpcdata
+   when Abbrev('ONLY',  athpcverb,1) then call AthTblOnly athpcdata
+   when athpcverb = 'ALL'            then call AthTblReset
+   when athpcverb = 'SORT' & athpcdata<>'' then call AthTblSortN
+   when athpcverb = 'SORT' & athsort<>'' then call AthTblSort
+   when athpcverb = 'EDIT' then "Edit dataset("requote(athpcdata)")"
+   when athpcverb='X' | Abbrev('EXCLUDE',athpcverb,3) then,
+        call AthTblExcl athpcdata
+   when athpcverb = 'NEW' & wordpos('I',athisel)>0 then Call AthTblInsertRow
+   when athcproc<>'' then do
+     Signal on error  name AthTblCmdErr
+     Signal on syntax name AthTblCmdSyn
+     Interpret,
+       "cc="athcproc"('"athme"','"athid"','CMD','"athtable"'",
+       ||  ",'"strip(translate(zcmd," ","'"))"','"athpasstext"')"
+     Signal off error
+     Signal off syntax
+     Select
+       when cc='ALL'          then call AthTblAll
+       when word(cc,1)='ONLY' then zz=AthTblAll()+AthTblOnly(subword(cc,2))
+       when word(cc,1)='EXCL' then zz=AthTblAll()+AthTblExcl(subword(cc,2))
+       when cc>4 then return cc
+       when cc=1 then athtdtop=0    /* view from top */
+       otherwise return 0
+     end
+   end
+   otherwise call AthIspMsg 'Invalid command:' athpcmd
+ End
+ return 0
+AthTblCmdErr:
+ Signal off error
+ Signal off syntax
+ say 'XISPTBL error' rc 'in line' sigl
+ return 0
+AthTblCmdSyn:
+ Signal off error
+ Signal off syntax
+ say 'XISPTBL syntax' rc 'in line' sigl':' "ERRORTEXT"(rc)
+ return 0
+
+AthTblErr:
+ if arg(1)<>'' then say arg(1) zerrlm
+ if arg(2)<>'' then athrc=arg(2)
+ Return word(arg(2) 0,1)
+
+AthTblSetSel:
+ zsel=arg(1)
+ "tbput" word(arg(2) athtable,1)
+ return rc
+
+ /*-------------------------------------------------------------------
+                           table functions
+ --------------------------------------------------------------------*/
+AthTblAll:
+AthTblReset:
+ "tbtop"    athtable
+ do forever
+   zsel=''
+   "tbscan" athtable "arglist(zsel) condlist(NE)"
+   if rc<>0 then leave
+   zsel=''
+   "tbput"  athtable
+ end
+ parse value 0 with athtdtop athsell
+ Return 0
+
+AthTblFind: /* find row with text */
+ if athfind arg(1)='' then return AthIspMsg('No find arg set')
+ if arg(1)<>'' then do
+   if word(arg(1),1)='*' then do
+     if words(arg(1))=1 then athfind=athfind 'NEXT'
+     else athfind=strip(athfind translate(subword(arg(1),2)))
+   end
+   else do
+     arg athfind
+     athfindn=''
+   end
+   w=word(athfind,words(athfind))
+   if w='NEXT' then do
+     athfind =strip(delword(athfind,words(athfind)))
+     athfindn=''
+   end
+   if w='PREV' then do
+     athfind =strip(delword(athfind,words(athfind)))
+     athfindn='NUMBER(-1)'
+   end
+ end
+ athfindt=athfind
+ if left(athfindt,1)="'" | left(athfindt,1)='"',
+   then athfindt=substr(athfindt,2,length(athfindt)-2)
+ "tbskip" athtable "row("athtdtop") noread" /* position   */
+ Do forever
+   "tbskip" athtable athfindn "rowid(#)"
+   if rc<>0 then return AthIspMsg(athfind 'not found')
+   if zsel='X' then iterate
+   Interpret "n=pos(athfindt,translate("athsearchvar"))"
+   if n>0 then leave
+ End
+ athtdtop=#
+ Return 0
+
+AthTblLoc: /* find row starting with text */
+ arg athloc
+ if athloc='' then return AthIspMsg('No locate arg')
+ athlocl=length(athloc)
+ "tbtop" athtable  /* position   */
+ Do forever
+   "tbskip" athtable "rowid(#)"
+   if rc<>0 then return AthIspMsg('No match for' athloc)
+   if zsel='X' then iterate
+   Interpret "athlocs=left(translate("athsearchvar"),athlocl)"
+   if athlocs>=athloc then leave
+ End
+ athtdtop=#
+ Return 0
+
+AthTblOnly: /* show only lines with text */
+ arg athonly
+ if athonly='' then return AthIspMsg('No ONLY arg set')
+ /*Call AthTblReset */
+ athonlyn=0
+ "tbtop"  athtable
+ do forever
+   "tbskip" athtable
+   if rc<>0 then leave
+   if zsel='X' then iterate
+   Interpret "n=pos(athonly,translate("athsearchvar"))"
+   if n=0 then do
+     zsel='X'
+     "tbput"  athtable
+   end
+   else athonlyn=athonlyn+1
+ End
+ athtdtop=0
+ call AthIspMsg athonlyn 'records with match'
+ Return 0
+
+AthTblExcl: /* suppress lines with text */
+ arg athexcl
+ if athexcl='' then return AthIspMsg('No excl arg set')
+ athexcln=0
+ "tbtop"  athtable
+ do forever
+   "tbskip" athtable
+   if rc<>0 then leave
+   if zsel='X' then iterate
+   Interpret "n=pos(athexcl,translate("athsearchvar"))"
+   if n>0 then do
+     zsel='X'
+     "tbput"  athtable
+     athexcln=athexcln+1
+   end
+ End
+ athtdtop=0
+ call AthIspMsg athexcln 'records excluded'
+ Return 0
+
+AthTblSort: /* sort */
+ zerrlm=''
+ "tbsort" athtable "fields("athsort")"
+ if rc<>0 then return AthIspMsg('SORT error rc' rc zerrlm)
+ athtdtop=0
+ return 0
+AthTblSortN: /* sort named */
+ parse value '' with zerrlm p
+ do n=1 to words(athpcdata)
+   p=p','word(athpcdata,n)',C,A'
+ end
+ "TBSORT" athtable "FIELDS("substr(p,2)")"
+ if rc<>0 then return AthIspMsg('SORT error rc' rc zerrlm)
+ athtdtop=0
+ return 0
+
+ /*--------------------------------------------------------------------
+                        Table edit functions
+ --------------------------------------------------------------------*/
+AthTblListRow:
+AthTblShowRow:
+AthTblEditL:  /* list table row (detail list) */
+AthTblEditS:  /* show table row (detail list) */
+trace off
+ Call AthTblSetSel      /* clear zsel */
+ if athdpanel<>'' then do
+   athpnlac ='OUTPUT'
+   athpnltx =''
+   zcmd=''
+   "display panel("athdpanel")"
+   if rc >8 then Return AthIspMsg('Panel' athdpanel 'display error rc' rc)
+ end
+ Return 0
+
+AthTblDeleteRow:
+AthTblEditD:  /* delete table row */
+trace off
+ Call AthTblSetSel      /* clear zsel */
+ if athdpanel<>'' then do
+   athpnlac ='OUTPUT'
+   athpnltx ='Hit ENTER to delete record, enter CANcel to abort'
+   zcmd=''
+   "display panel("athdpanel")"
+   if rc >8 then Return AthIspMsg('Panel' athdpanel 'display error rc' rc)
+   if rc<>0 then Return AthIspMsg('Row delete aborted')
+ end
+ Return AthIspCmd("tbdelete" athtable,,,'Delete failed')
+
+AthTblEditRow:
+AthTblEditE:  /* edit table row   */
+trace off
+ if athdpanel='' then return AthIspMsg('DPANEL is required for EDIT')
+ Call AthTblSetSel      /* clear zsel */
+ athwtbl='W'athuid
+ parse value 'INPUT USCORE' with athpnlac athpnlhi
+ athpnltx = word(arg(1) 'Edit',1) 'record, enter CANcel to discard changes'
+ do forever
+   zcmd=''
+   "display panel("athdpanel")"
+   if rc>8 then Return AthIspMsg('Panel' athdpanel 'rc' rc zerrlm)
+   if abbrev('CANCEL',zcmd,3) then Return AthIspMsg('Updates aborted',4)
+   if rc=8 then Return AthIspCmd("tbput" athtable)
+   if zcmd<>'' then do
+     /* run command with copy of table row*/
+     if athdproc<>'' then do
+       "tbcreate" athwtbl "names("athvarl") nowrite share"
+       "tbadd" athwtbl
+       Interpret,
+         "cc="athdproc"('"athme"','"athid"','DTL','"athwtbl"','"zcmd"')"
+       if cc=0 then do
+         "tbget" athwtbl
+         "tbput" athtable
+       end
+       "tbend" athwtbl
+     end
+     else zz=AthIspMsg('Invalid command' zcmd)
+   end
+ end
+ Return 0
+
+AthTblInsertRow:
+AthTblEditI:  /* insert table row */
+ Call AthTblSetSel      /* clear zsel */
+ "tbvclear" athtable
+ "tbadd" athtable
+ if athdpanel='' then return 0
+ if AthTblEditRow('Insert')<>0 then return AthIspCmd("tbdelete" athtable)
+ /* drop row if all fields are null
+ "tbquery" athtable "names(n) keys(k)"
+ n=space(translate(n k,' ','()'))
+ p=wordpos('ZSEL',n)
+ if p>0 then n =delword(n,p,1)
+ interpret 'if' n '="" then return AthIspCmd("tbdelete"' athtable')' */
+ athdosort='Y'
+ Return 0
+
+AthTblRepeatRow:
+AthTblEditR:  /* repeat table row */
+ Call AthTblSetSel      /* clear zsel */
+ "tbadd" athtable
+ if athdpanel<>'' then do
+   if AthTblEditRow('Repeat')=0 then athdosort='Y'
+   else "tbdelete" athtable
+ end
+ Return 0
+
+ /*--------------------------------------------------------------------
+                               other
+ --------------------------------------------------------------------*/
+Requote: if arg(1)='' then return '';else return "'"Unquote(arg(1))"'"
+Unquote: return space(translate(arg(1)," ","'"),0)
+XMsg: say 'XISPTBL' arg(1); return word(arg(2) 0,1)
+UnPar: return space(translate(arg(1),' ','()'))
+
+AthIspCmd: /* command,rc,msg-ok-prefix,msg-nok-prefix */
+ zerrlm=''
+ address ispexec arg(1);
+ AthIspCmdrc=rc
+ AthIspCmdmsg='rc' rc zerrlm
+ if rc<>0 & arg(4)<>'' then return AthIspMsg(arg(3) AthIspCmdmsg,rc)
+ if rc<>0 then return rc
+ if rc= 0 & arg(3)<>'' then return AthIspMsg(arg(3) 'ok')
+ return max(word(arg(2) 0,1),AthIspCmdrc)
+
+AthIspMsg:
+ trace off
+ zedlmsg=athmsgpfx arg(1)
+ address ispexec"setmsg msg(isrz000)"
+ return word(arg(2) 0,1)
+
+AthRunCmd:
+trace off
+ parse value '0 0' with rc result zerrlm
+ Select
+   when word(translate(arg(1)),1)='ISPX' then,
+     address ispexec subword(arg(1),2)
+   when wordpos(translate(arg(1)),'EDITROW REPEATROW DELETEROW',
+     'INSERTROW')>0 then Interpret "Call Table"arg(1)
+   otherwise do
+     signal on error  name AthRunCmdErr
+     signal on syntax name AthRunCmdErr
+     Select
+       when left(arg(1),1)='%' then address tso arg(1)
+       when word(translate(arg(1)),1)='TSOX' then do
+         address tso subword(arg(1),2)
+         address ispexec 'CONTROL DISPLAY REFRESH'
+       end
+       otherwise Interpret arg(1)
+     End
+     signal off error
+     signal off syntax
+   end
+ end
+ rc= max(rc,result)
+AthRunCmdErr:
+ if rc>8 | rc<0 then say 'Execution error' arg(1) 'RC' rc zerrlm
+ signal off error
+ signal off syntax
+ return 0
+
+AthParser:
+trace off
+ parse arg zpstring,zpvalids,zppfx
+ upper zpvalids
+ do while zpstring<>''
+   zpstring=strip(zpstring,'b')
+   if zpstring='' then return 0
+   zn=Min(pos('(',zpstring'('),pos(' ',zpstring' '))
+   parse var zpstring zpverb =(zn) zpstring
+   if zpvalids<>'' & wordpos(translate(zpverb),zpvalids)=0 ,
+     then return 1 'Invalid verb' zpverb
+   if left(zpstring' ',1)=' ' then zn=Value(zppfx''zpverb,'Y')
+   else do
+     parse value 1 0 substr(zpstring,2) with zn zp zpstring
+     if left(zpstring,1)=')' then zpstring=' 'zpstring /* null */
+     do until zn<=0
+       zp=Verify(zpstring')','()','M',zp+1)
+       if zp=0 then return 2 'Missing end at' zpstring
+       if substr(zpstring,zp,1)=')' then zn=zn-1
+       else zn=zn+1
+     end
+     parse var zpstring zpdata =(zp) zpstring
+     zn=Value(zppfx''zpverb,strip(zpdata))
+     if left(zpstring,1)=')' then zpstring=substr(zpstring,2)
+   end
+ end
+ return 0
+
+/* test value against a list of verbs/abbreviations
+   value,list - returns 1: true or 0: false
+   list must include the length of the abbreviation, i.e. NAME(1)
+*/
+AthAbrList: Procedure expose abbrlistv
+ arg val,lst
+ if wordpos(val,translate(lst,' ','()'))>0 then do
+   abbrlistv=val
+   return 1
+ end
+ do while lst<>''
+   parse value space(lst) with abbrlistv'('lstl')' lst
+   if lstl<>'' then,
+     if abbrev(abbrlistv,val,lstl) then return 1
+ end
+ return 0   /* false */
+
+AthTblCopy: Procedure
+ arg $ctn1 $ctn2            /* name1,name2 */
+ zsel=''
+ address ispexec
+ "tbtop" $ctn1
+ "tbquery" $ctn1 "rownum($rows)"
+ do $rows
+   "tbskip" $ctn1
+   "tbadd"  $ctn2
+ end
+ return 0

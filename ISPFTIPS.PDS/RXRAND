@@ -24,3 +24,12 @@
   say 'DDname based on day of month and seconds since midnight:'
   ddn = 'D'left(date('e'),2)''right(time('l'),5)
   say 'DDname:' ddn
+
+  /* ---------------------------------- *
+  | Using the OMVS /dev/urandom device |
+  * ---------------------------------- */
+  say ' '
+  say 'Random string generated from OMVS /dev/urandom device:'
+  x = bpxwunix('head -c 4 /dev/urandom',,so.,se.)
+  random = c2x(so.1)
+  say 'DDname:' left(random,7)

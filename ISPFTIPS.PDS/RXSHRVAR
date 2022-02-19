@@ -1,0 +1,104 @@
+  /* ----------------------- REXX --------------------------- *
+  | REXX to demonstrate sharing stem variables between       |
+  | two rexx exec's.  This exec demonstrates both the        |
+  | creator of the stem and the receiver of the stem for     |
+  | simplicity.                                              |
+  |                                                          |
+  | This is accomplished by placing each stem variable       |
+  | a unique ISPF variable and then putting the ISPF         |
+  | variable into the ISPF shared variable pool for sharing. |
+  | Then retrieving the ISPF variables and recreating the    |
+  | stem variables for use.                                  |
+  |                                                          |
+  | Note: Due to ISPF variable name limitations the REXX     |
+  |       variable name may not exceed 8 characters and      |
+  |       must conform to ISPF variable name conventions.    |
+  |                                                          |
+  | ISPF - Developers - Tips and Tricks                      |
+  * -------------------------------------------------------- */
+
+  /* ------------------------------ *
+  | Establish the ISPF Environment |
+  * ------------------------------ */
+  Address ISPExec
+
+  /* ------------------------------- *
+  | Generate a sample stem variable |
+  * ------------------------------- */
+  do i = 1 to 10
+    sample.i = 'Stem' i 'Seconds from midnight:'  time('s')
+    sample.0 = i
+  end
+
+  say 'Proof the stem has been created:'
+  do i = 1 to sample.0
+     say sample.i
+     end
+
+  /* ----------------------------------------------------- *
+  | Create unique ISPF variables from each stem and       |
+  | VPUT the ISPF variable into the shared variable pool. |
+  |                                                       |
+  | The samplec variable contains the count of the number |
+  | of variables.                                         |
+  * ----------------------------------------------------- */
+  samplec = sample.0       /* setup count variable */
+  'vput (samplec) shared'  /* vput the variable    */
+
+  /* ------------------------------------- *
+  | Process each individual stem variable |
+  | Using the REXX interpret function     |
+  * ------------------------------------- */
+  do i = 1 to sample.0
+    interpret 'sample'i '=  sample.'i
+    'vput (sample'i') shared'
+  end
+
+  /* --------------------------------------- *
+  | Drop (release) the REXX sample variable |
+  * --------------------------------------- */
+  drop sample.
+
+  /* ------------------------------ *
+   | Proof the sample. stem is gone |
+   * ------------------------------ */
+   say ' '
+   say 'Proof the stem is gone (showing only 2 of the stems):'
+   say 'sample.0 is' sample.0
+   say 'sample.1 is' sample.1
+
+  /* ---------------------------------- *
+   | Proof the ISPF variables are there |
+   * ---------------------------------- */
+   say ' '
+   say 'Proof the ISPF variables are there (showing only 2 of the stems):'
+   say 'samplec is' samplec
+   say 'sample1 is' sample1
+
+  /* ---------------------------------------------------------- *
+  | Get the samplec (count) ISPF variable into a REXX variable |
+  | and then VERASE it to remove it from the ISPF shared       |
+  | variable pool.                                             |
+  * ---------------------------------------------------------- */
+  'vget (samplec) shared'    /* get the count of the stem variables */
+  'verase (samplec) shared'  /* clean up ispf var pool    */
+  sample.0 = samplec         /* set sample.0 to the count */
+
+  /* ------------------------------------------------------- *
+  | Retrieve from the ISPF Shared Variable Pool each unique |
+  | stem variable and place it back into the stem.          |
+  * ------------------------------------------------------- */
+  do i = 1 to sample.0
+    'vget (sample'i') shared'   /* get the individual var */
+    'verase (sample'i') shared' /* clean up ispf variable */
+    interpret 'sample.'i '= sample'i      /* set the stem           */
+  end
+
+  /* ---------------------------- *
+   | Proof the stem was recreated |
+   * ---------------------------- */
+   say ' '
+   say 'Proof the stem was recreated:'
+   do i = 1 to sample.0
+      say sample.i
+      end
