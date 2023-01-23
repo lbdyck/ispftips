@@ -1,6 +1,6 @@
 )CM Demo use of TSO stack in an ISPF skeleton
 )REXX STACKN
-"alloc f(in) ds('sys1.proclib(bpxas)') shr reuse"
+"alloc f(in) ds('cpac.proclib(jes2)') shr reuse"
 'execio * diskr in (finis stem in.'
 'free f(in)'
  "delstack"
